@@ -14,7 +14,7 @@ export interface AuthUser {
 export class AuthService {
   static async signIn(email: string, password: string): Promise<{ user: AuthUser | null; error: string | null }> {
     try {
-      console.log('Iniciando login para:', email);
+      console.log('AuthService: Iniciando login para:', email);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -22,7 +22,7 @@ export class AuthService {
       });
 
       if (error) {
-        console.error('Erro no Supabase Auth:', error);
+        console.error('AuthService: Erro no Supabase Auth:', error);
         return { user: null, error: error.message };
       }
 
@@ -30,7 +30,7 @@ export class AuthService {
         return { user: null, error: 'Erro na autenticação' };
       }
 
-      console.log('Login bem-sucedido, buscando dados do usuário...');
+      console.log('AuthService: Login bem-sucedido, buscando dados do usuário...');
 
       const { data: usuario, error: usuarioError } = await supabase
         .from('usuarios')
@@ -44,7 +44,7 @@ export class AuthService {
         .single();
 
       if (usuarioError || !usuario) {
-        console.error('Erro ao buscar dados do usuário:', usuarioError);
+        console.error('AuthService: Erro ao buscar dados do usuário:', usuarioError);
         return { user: null, error: 'Dados do usuário não encontrados' };
       }
 
@@ -58,9 +58,10 @@ export class AuthService {
         empresaNome: usuario.empresas.nome,
       };
 
+      console.log('AuthService: Usuário autenticado:', authUser.nome);
       return { user: authUser, error: null };
     } catch (error) {
-      console.error('Erro no login:', error);
+      console.error('AuthService: Erro no login:', error);
       return { user: null, error: 'Erro interno do servidor' };
     }
   }
@@ -87,7 +88,7 @@ export class AuthService {
         .single();
 
       if (error || !usuario) {
-        console.error('Erro ao buscar usuário atual:', error);
+        console.error('AuthService: Erro ao buscar usuário atual:', error);
         return null;
       }
 
@@ -101,7 +102,7 @@ export class AuthService {
         empresaNome: usuario.empresas.nome,
       };
     } catch (error) {
-      console.error('Erro ao buscar usuário atual:', error);
+      console.error('AuthService: Erro ao buscar usuário atual:', error);
       return null;
     }
   }

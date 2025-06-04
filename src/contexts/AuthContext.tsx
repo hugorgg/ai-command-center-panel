@@ -17,76 +17,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-
-    // Configurar listener de mudanças de autenticação
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state change:', event, session?.user?.email);
-        
-        if (!mounted) return;
-
-        if (session?.user) {
-          try {
-            const currentUser = await AuthService.getCurrentUser();
-            if (mounted) {
-              setUser(currentUser);
-              setLoading(false);
-            }
-          } catch (error) {
-            console.error('Erro ao carregar dados do usuário:', error);
-            if (mounted) {
-              setUser(null);
-              setLoading(false);
-            }
-          }
-        } else {
-          if (mounted) {
-            setUser(null);
-            setLoading(false);
-          }
-        }
-      }
-    );
-
+    console.log('AuthProvider: Inicializando...');
+    
     // Verificar sessão inicial
-    const checkInitialSession = async () => {
+    const getInitialSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
-        if (!mounted) return;
-
+        console.log('AuthProvider: Sessão inicial:', session?.user?.email || 'Nenhuma');
+        
         if (session?.user) {
           const currentUser = await AuthService.getCurrentUser();
+          console.log('AuthProvider: Usuário carregado:', currentUser?.nome || 'Erro');
           setUser(currentUser);
-        } else {
-          setUser(null);
         }
       } catch (error) {
-        console.error('Erro ao verificar sessão inicial:', error);
-        if (mounted) setUser(null);
+        console.error('AuthProvider: Erro ao verificar sessão inicial:', error);
       } finally {
-        if (mounted) setLoading(false);
+        setLoading(false);
       }
     };
 
-    checkInitialSession();
+    getInitialSession();
+
+    // Configurar listener para mudanças de autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('AuthProvider: Auth state change:', event, session?.user?.email);
+        
+        if (session?.user) {
+          try {
+            const currentUser = await AuthService.getCurrentUser();
+            setUser(currentUser);
+          } catch (error) {
+            console.error('AuthProvider: Erro ao carregar usuário:', error);
+            setUser(null);
+          }
+        } else {
+          setUser(null);
+        }
+        
+        setLoading(false);
+      }
+    );
 
     return () => {
-      mounted = false;
       subscription.unsubscribe();
     };
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
+      console.log('AuthProvider: Tentando login para:', email);
       const { user: authUser, error } = await AuthService.signIn(email, password);
+      
       if (authUser) {
         setUser(authUser);
+        console.log('AuthProvider: Login bem-sucedido');
         return { error: null };
       }
+      
+      console.error('AuthProvider: Erro no login:', error);
       return { error: error || 'Erro desconhecido no login' };
     } catch (error) {
-      console.error('Erro no signIn:', error);
+      console.error('AuthProvider: Erro no signIn:', error);
       return { error: 'Erro interno no login' };
     }
   };
@@ -95,8 +88,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await AuthService.signOut();
       setUser(null);
+      console.log('AuthProvider: Logout realizado');
     } catch (error) {
-      console.error('Erro no logout:', error);
+      console.error('AuthProvider: Erro no logout:', error);
     }
   };
 
