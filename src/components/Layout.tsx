@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { NavLink, Outlet } from 'react-router-dom';
@@ -27,6 +27,14 @@ export function Layout() {
     { name: 'Configurações', href: '/configuracoes', icon: Settings },
   ];
 
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">
+        <div className="text-white text-lg">Carregando...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0d1117] flex">
       {/* Sidebar */}
@@ -38,11 +46,11 @@ export function Layout() {
         <div className="p-4 border-b border-[#30363d] flex items-center justify-between">
           {!isCollapsed && (
             <div>
-              <h1 className="text-xl font-bold text-white">ComandAI</h1>
-              <p className="text-sm text-[#9ca3af] mt-1">{user?.nome}</p>
+              <h1 className="text-xl font-bold text-white">{user.empresaNome}</h1>
+              <p className="text-sm text-[#9ca3af] mt-1">{user.nome}</p>
               <div className="mt-2">
                 <span className="inline-block px-2 py-1 text-xs bg-[#70a5ff] text-white rounded">
-                  {user?.plano}
+                  {user.plano}
                 </span>
               </div>
             </div>
