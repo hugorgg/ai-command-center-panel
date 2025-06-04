@@ -14,24 +14,14 @@ export interface AuthUser {
 export class AuthService {
   static async signIn(email: string, password: string): Promise<{ user: AuthUser | null; error: string | null }> {
     try {
-      // Primeiro buscar a empresa pelo email
-      const { data: empresa, error: empresaError } = await supabase
-        .from('empresas')
-        .select('id, nome, plano')
-        .eq('email', email)
-        .single();
-
-      if (empresaError || !empresa) {
-        return { user: null, error: 'E-mail não encontrado' };
-      }
-
-      // Fazer login no Supabase Auth
+      // Usar o Supabase Auth oficial
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
+        console.error('Erro no Supabase Auth:', error);
         return { user: null, error: error.message };
       }
 
@@ -39,20 +29,30 @@ export class AuthService {
         return { user: null, error: 'Erro na autenticação' };
       }
 
-      // Buscar dados do usuário
+      // Buscar dados do usuário na tabela usuarios (que já foi criado pela trigger)
       const { data: usuario, error: usuarioError } = await supabase
         .from('usuarios')
-        .select('nome, papel')
+        .select(`
+          nome, 
+          papel, 
+          empresa_id,
+          empresas!inner(nome, plano)
+        `)
         .eq('auth_user_id', data.user.id)
         .single();
+
+      if (usuarioError || !usuario) {
+        console.error('Erro ao buscar dados do usuário:', usuarioError);
+        return { user: null, error: 'Dados do usuário não encontrados' };
+      }
 
       const authUser: AuthUser = {
         id: data.user.id,
         email: data.user.email!,
-        empresa_id: empresa.id,
-        nome: usuario?.nome || empresa.nome,
-        papel: usuario?.papel || 'admin',
-        plano: empresa.plano,
+        empresa_id: usuario.empresa_id,
+        nome: usuario.nome,
+        papel: usuario.papel,
+        plano: usuario.empresas.plano,
       };
 
       return { user: authUser, error: null };

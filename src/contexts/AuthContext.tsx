@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AuthService, AuthUser } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import { Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -17,15 +18,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Verificar sessão inicial
-    AuthService.getCurrentUser().then(user => {
-      setUser(user);
-      setLoading(false);
-    });
-
-    // Escutar mudanças de autenticação
+    // Configurar listener de mudanças de autenticação PRIMEIRO
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.email);
+        
         if (event === 'SIGNED_IN' && session) {
           const currentUser = await AuthService.getCurrentUser();
           setUser(currentUser);
@@ -35,6 +32,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       }
     );
+
+    // DEPOIS verificar sessão inicial
+    const checkInitialSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const currentUser = await AuthService.getCurrentUser();
+        setUser(currentUser);
+      }
+      setLoading(false);
+    };
+
+    checkInitialSession();
 
     return () => subscription.unsubscribe();
   }, []);
