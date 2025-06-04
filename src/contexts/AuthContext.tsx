@@ -24,8 +24,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('Auth state change:', event, session?.user?.email);
         
         if (event === 'SIGNED_IN' && session) {
-          const currentUser = await AuthService.getCurrentUser();
-          setUser(currentUser);
+          try {
+            const currentUser = await AuthService.getCurrentUser();
+            setUser(currentUser);
+          } catch (error) {
+            console.error('Erro ao carregar dados do usuário:', error);
+            setUser(null);
+          }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
         }
@@ -35,12 +40,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // DEPOIS verificar sessão inicial
     const checkInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const currentUser = await AuthService.getCurrentUser();
-        setUser(currentUser);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const currentUser = await AuthService.getCurrentUser();
+          setUser(currentUser);
+        }
+      } catch (error) {
+        console.error('Erro ao verificar sessão inicial:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     checkInitialSession();
@@ -49,16 +59,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { user: authUser, error } = await AuthService.signIn(email, password);
-    if (authUser) {
-      setUser(authUser);
+    try {
+      setLoading(true);
+      const { user: authUser, error } = await AuthService.signIn(email, password);
+      if (authUser) {
+        setUser(authUser);
+        return { error: null };
+      }
+      return { error: error || 'Erro desconhecido no login' };
+    } catch (error) {
+      console.error('Erro no signIn:', error);
+      return { error: 'Erro interno no login' };
+    } finally {
+      setLoading(false);
     }
-    return { error };
   };
 
   const signOut = async () => {
-    await AuthService.signOut();
-    setUser(null);
+    try {
+      await AuthService.signOut();
+      setUser(null);
+    } catch (error) {
+      console.error('Erro no logout:', error);
+    }
   };
 
   return (

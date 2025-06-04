@@ -9,11 +9,14 @@ export interface AuthUser {
   nome: string;
   papel: string;
   plano: string;
+  empresaNome: string;
 }
 
 export class AuthService {
   static async signIn(email: string, password: string): Promise<{ user: AuthUser | null; error: string | null }> {
     try {
+      console.log('Iniciando login para:', email);
+      
       // Usar o Supabase Auth oficial
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -29,7 +32,9 @@ export class AuthService {
         return { user: null, error: 'Erro na autenticação' };
       }
 
-      // Buscar dados do usuário na tabela usuarios (que já foi criado pela trigger)
+      console.log('Login bem-sucedido, buscando dados do usuário...');
+
+      // Buscar dados do usuário na tabela usuarios
       const { data: usuario, error: usuarioError } = await supabase
         .from('usuarios')
         .select(`
@@ -46,6 +51,8 @@ export class AuthService {
         return { user: null, error: 'Dados do usuário não encontrados' };
       }
 
+      console.log('Dados do usuário carregados:', usuario);
+
       const authUser: AuthUser = {
         id: data.user.id,
         email: data.user.email!,
@@ -53,6 +60,7 @@ export class AuthService {
         nome: usuario.nome,
         papel: usuario.papel,
         plano: usuario.empresas.plano,
+        empresaNome: usuario.empresas.nome,
       };
 
       return { user: authUser, error: null };
@@ -92,6 +100,7 @@ export class AuthService {
         nome: usuario.nome,
         papel: usuario.papel,
         plano: usuario.empresas.plano,
+        empresaNome: usuario.empresas.nome,
       };
     } catch (error) {
       console.error('Erro ao buscar usuário atual:', error);
