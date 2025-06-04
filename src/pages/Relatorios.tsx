@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button';
 import { DollarSign, TrendingUp, Download, Lock } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useToast } from '@/hooks/use-toast';
+import { Json } from '@/integrations/supabase/types';
 
 interface RelatorioData {
   receita_atual: number;
   receita_ia: number;
-  comparativo_mes: any;
-  projecoes: any;
-  feedbacks: any[];
+  comparativo_mes: Json;
+  projecoes: Json;
+  feedbacks: Json;
 }
 
 export default function Relatorios() {
