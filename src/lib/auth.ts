@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
 
 export interface AuthUser {
   id: string;
@@ -8,21 +9,19 @@ export interface AuthUser {
   nome: string;
   papel: string;
   plano: string;
-  empresaNome: string;
 }
 
 export class AuthService {
   static async signIn(email: string, password: string): Promise<{ user: AuthUser | null; error: string | null }> {
     try {
-      console.log('AuthService: Iniciando login para:', email);
-      
+      // Usar o Supabase Auth oficial
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        console.error('AuthService: Erro no Supabase Auth:', error);
+        console.error('Erro no Supabase Auth:', error);
         return { user: null, error: error.message };
       }
 
@@ -30,8 +29,7 @@ export class AuthService {
         return { user: null, error: 'Erro na autenticação' };
       }
 
-      console.log('AuthService: Login bem-sucedido, buscando dados do usuário...');
-
+      // Buscar dados do usuário na tabela usuarios (que já foi criado pela trigger)
       const { data: usuario, error: usuarioError } = await supabase
         .from('usuarios')
         .select(`
@@ -44,7 +42,7 @@ export class AuthService {
         .single();
 
       if (usuarioError || !usuario) {
-        console.error('AuthService: Erro ao buscar dados do usuário:', usuarioError);
+        console.error('Erro ao buscar dados do usuário:', usuarioError);
         return { user: null, error: 'Dados do usuário não encontrados' };
       }
 
@@ -55,13 +53,11 @@ export class AuthService {
         nome: usuario.nome,
         papel: usuario.papel,
         plano: usuario.empresas.plano,
-        empresaNome: usuario.empresas.nome,
       };
 
-      console.log('AuthService: Usuário autenticado:', authUser.nome);
       return { user: authUser, error: null };
     } catch (error) {
-      console.error('AuthService: Erro no login:', error);
+      console.error('Erro no login:', error);
       return { user: null, error: 'Erro interno do servidor' };
     }
   }
@@ -76,7 +72,7 @@ export class AuthService {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return null;
 
-      const { data: usuario, error } = await supabase
+      const { data: usuario } = await supabase
         .from('usuarios')
         .select(`
           nome, 
@@ -87,10 +83,7 @@ export class AuthService {
         .eq('auth_user_id', session.user.id)
         .single();
 
-      if (error || !usuario) {
-        console.error('AuthService: Erro ao buscar usuário atual:', error);
-        return null;
-      }
+      if (!usuario) return null;
 
       return {
         id: session.user.id,
@@ -99,10 +92,9 @@ export class AuthService {
         nome: usuario.nome,
         papel: usuario.papel,
         plano: usuario.empresas.plano,
-        empresaNome: usuario.empresas.nome,
       };
     } catch (error) {
-      console.error('AuthService: Erro ao buscar usuário atual:', error);
+      console.error('Erro ao buscar usuário atual:', error);
       return null;
     }
   }

@@ -10,63 +10,35 @@ import { useToast } from '@/hooks/use-toast';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user, loading, signIn } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const { user, signIn } = useAuth();
   const { toast } = useToast();
 
-  // Se já está autenticado, redireciona
-  if (user && !loading) {
+  if (user) {
     return <Navigate to="/dashboard" replace />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (isSubmitting) return;
-    
-    setIsSubmitting(true);
+    setLoading(true);
 
-    try {
-      console.log('Login: Tentando fazer login...');
-      const { error } = await signIn(email, password);
-      
-      if (error) {
-        console.error('Login: Erro no login:', error);
-        toast({
-          title: 'Erro no login',
-          description: error,
-          variant: 'destructive',
-        });
-      } else {
-        console.log('Login: Login bem-sucedido!');
-        toast({
-          title: 'Login realizado',
-          description: 'Bem-vindo ao ComandAI!',
-        });
-      }
-    } catch (error) {
-      console.error('Login: Erro inesperado no login:', error);
+    const { error } = await signIn(email, password);
+    
+    if (error) {
       toast({
         title: 'Erro no login',
-        description: 'Erro inesperado. Tente novamente.',
+        description: error,
         variant: 'destructive',
       });
-    } finally {
-      setIsSubmitting(false);
+    } else {
+      toast({
+        title: 'Login realizado',
+        description: 'Bem-vindo ao ComandAI!',
+      });
     }
+    
+    setLoading(false);
   };
-
-  // Mostra loading enquanto verifica autenticação inicial
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-[#70a5ff] border-t-transparent rounded-full mx-auto"></div>
-          <p className="text-white mt-2">Verificando autenticação...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-[#0d1117] flex items-center justify-center px-4">
@@ -92,7 +64,6 @@ export default function Login() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  disabled={isSubmitting}
                   className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#9ca3af]"
                 />
               </div>
@@ -103,16 +74,15 @@ export default function Login() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  disabled={isSubmitting}
                   className="bg-[#0d1117] border-[#30363d] text-white placeholder:text-[#9ca3af]"
                 />
               </div>
               <Button
                 type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-[#70a5ff] hover:bg-[#5a8bff] text-white disabled:opacity-50"
+                disabled={loading}
+                className="w-full bg-[#70a5ff] hover:bg-[#5a8bff] text-white"
               >
-                {isSubmitting ? 'Entrando...' : 'Entrar'}
+                {loading ? 'Entrando...' : 'Entrar'}
               </Button>
             </form>
             
@@ -137,7 +107,7 @@ export default function Login() {
         <div className="mt-8 text-center text-[#9ca3af] text-sm">
           <p>Dados de teste:</p>
           <p>E-mail: painel@teste.com</p>
-          <p>Senha: 123456</p>
+          <p>Senha: password</p>
         </div>
       </div>
     </div>
