@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { User, Session } from '@supabase/supabase-js';
 
 export interface AuthUser {
   id: string;
@@ -17,7 +16,6 @@ export class AuthService {
     try {
       console.log('Iniciando login para:', email);
       
-      // Usar o Supabase Auth oficial
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -34,7 +32,6 @@ export class AuthService {
 
       console.log('Login bem-sucedido, buscando dados do usuário...');
 
-      // Buscar dados do usuário na tabela usuarios
       const { data: usuario, error: usuarioError } = await supabase
         .from('usuarios')
         .select(`
@@ -50,8 +47,6 @@ export class AuthService {
         console.error('Erro ao buscar dados do usuário:', usuarioError);
         return { user: null, error: 'Dados do usuário não encontrados' };
       }
-
-      console.log('Dados do usuário carregados:', usuario);
 
       const authUser: AuthUser = {
         id: data.user.id,
@@ -80,7 +75,7 @@ export class AuthService {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return null;
 
-      const { data: usuario } = await supabase
+      const { data: usuario, error } = await supabase
         .from('usuarios')
         .select(`
           nome, 
@@ -91,7 +86,10 @@ export class AuthService {
         .eq('auth_user_id', session.user.id)
         .single();
 
-      if (!usuario) return null;
+      if (error || !usuario) {
+        console.error('Erro ao buscar usuário atual:', error);
+        return null;
+      }
 
       return {
         id: session.user.id,

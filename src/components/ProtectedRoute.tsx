@@ -12,7 +12,10 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">
-        <div className="text-white text-lg">Carregando...</div>
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-[#70a5ff] border-t-transparent rounded-full mx-auto"></div>
+          <p className="text-white mt-2">Verificando autenticação...</p>
+        </div>
       </div>
     );
   }

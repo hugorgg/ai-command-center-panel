@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -43,7 +43,6 @@ export default function Login() {
           title: 'Login realizado',
           description: 'Bem-vindo ao ComandAI!',
         });
-        // O redirecionamento será feito automaticamente via Navigate acima
       }
     } catch (error) {
       console.error('Erro inesperado no login:', error);
@@ -61,7 +60,10 @@ export default function Login() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">
-        <div className="text-white text-lg">Carregando...</div>
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-[#70a5ff] border-t-transparent rounded-full mx-auto"></div>
+          <p className="text-white mt-2">Inicializando aplicação...</p>
+        </div>
       </div>
     );
   }
